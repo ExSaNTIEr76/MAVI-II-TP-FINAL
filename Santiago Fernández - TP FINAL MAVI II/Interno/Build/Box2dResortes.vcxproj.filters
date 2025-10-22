@@ -88,6 +88,15 @@
     <Image Include="pendulum.png">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="cannonBase.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="cannonMouth.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="platform.png">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <None Include="PIXELADE.woff">

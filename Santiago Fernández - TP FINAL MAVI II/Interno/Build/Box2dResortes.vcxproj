@@ -52,8 +52,11 @@
   <ItemGroup>
     <Image Include="..\Resources\crosshair.png" />
     <Image Include="background.png" />
+    <Image Include="cannonBase.png" />
+    <Image Include="cannonMouth.png" />
     <Image Include="gameOver.png" />
     <Image Include="pendulum.png" />
+    <Image Include="platform.png" />
     <Image Include="victoria.png" />
     <Image Include="youWin.png" />
   </ItemGroup>

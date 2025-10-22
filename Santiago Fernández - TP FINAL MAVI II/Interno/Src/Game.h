@@ -53,12 +53,20 @@ private:
     float tiempoEsperaGameOver = 5.0f;
 
     // Recursos gráficos
+    sf::Texture cannonBaseTexture;
+    sf::Texture cannonMouthTexture;
+    sf::Texture platformTexture;
+
+    sf::Sprite cannonBaseSprite;
+    sf::Sprite cannonMouthSprite;
+
+    std::vector<sf::Sprite> plataformasSprites;
+
     sf::Texture gameOverTexture;
     sf::Sprite gameOverSprite;
 
     sf::Texture victoriaTexture;
     sf::Sprite victoriaSprite;
-
 
     // Tiempo de frame
     float frameTime;
@@ -96,3 +104,4 @@ public:
     void CreateLevel2();
     void CreateLevel3();
 };
+

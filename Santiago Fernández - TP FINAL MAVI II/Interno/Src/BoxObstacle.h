@@ -12,6 +12,7 @@ class BoxObstacle {
 public:
 
     BoxObstacle(b2World* world, sf::RenderWindow* window, float x, float y, float width, float height, bool dynamic = false);
+    b2Body* GetBody() const { return body; }
     void Draw();
     void Update();
 

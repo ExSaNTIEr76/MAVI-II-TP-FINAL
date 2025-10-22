@@ -81,8 +81,27 @@ Game::Game(int ancho, int alto, std::string titulo)
         wnd->display();
     }
 
-
     if (!wnd->isOpen()) return;
+
+    // Carga las texturas del cañón y las plataformas.
+    if (!cannonBaseTexture.loadFromFile("cannonBase.png"))
+        std::cout << "No se pudo cargar cannonBase.png\n";
+    else {
+        cannonBaseSprite.setTexture(cannonBaseTexture);
+        cannonBaseSprite.setOrigin(cannonBaseTexture.getSize().x / 2.f, cannonBaseTexture.getSize().y / 2.f);
+        cannonBaseSprite.setPosition(14.0f, 90.0f);
+    }
+
+    if (!cannonMouthTexture.loadFromFile("cannonMouth.png"))
+        std::cout << "No se pudo cargar cannonMouth.png\n";
+    else {
+        cannonMouthSprite.setTexture(cannonMouthTexture);
+        cannonMouthSprite.setOrigin(0.0f, cannonMouthTexture.getSize().y / 2.f);
+        cannonMouthSprite.setPosition(10.0f, 80.0f);
+    }
+
+    if (!platformTexture.loadFromFile("platform.png"))
+        std::cout << "No se pudo cargar platform.png\n";
 
     // Restaura la vista con zoom después del menú.
     SetZoom();
@@ -96,7 +115,6 @@ Game::Game(int ancho, int alto, std::string titulo)
     InitBaseWorld();
     InitLevelBase();
     CreateLevel1();
-
 
     // --- BACKGROUND ---
     background = new Background(wnd, currentLevel);
@@ -374,11 +392,7 @@ void Game::SetZoom()
 
 void Game::DrawGame()
 {
-    // Dibujar obstáculos:
-    for (auto& box : boxes)
-        box->Draw();
-
-    // Control body sólo si existe:
+    // --- CONTROL BODY ---
     if (controlBody) {
         sf::CircleShape controlShape(5);
         controlShape.setFillColor(sf::Color::Magenta);
@@ -386,38 +400,62 @@ void Game::DrawGame()
         wnd->draw(controlShape);
     }
 
-    // --- BOCA DEL CAÑÓN ---
+    // --- ACTUALIZAR DIRECCIÓN DEL CAÑÓN ---
     if (!gameOver && !meta->HasWon() && !gameCompleted)
     {
+        // Convierte la posición del mouse a coordenadas del mundo.
         sf::Vector2i mousePixel = sf::Mouse::getPosition(*wnd);
         sf::Vector2f mouseWorld = wnd->mapPixelToCoords(mousePixel);
 
+        // Toma la posición de referencia de la boca del cañón.
         sf::Vector2f cannonOrigin = bocaCanon.getPosition();
+
+        // Calcula dirección normalizada.
         sf::Vector2f dir = mouseWorld - cannonOrigin;
         float len = std::sqrt(dir.x * dir.x + dir.y * dir.y);
         if (len > 0.0001f) dir /= len; else dir = sf::Vector2f(1.0f, 0.0f);
+
+        // Calcular ángulo en grados.
         float angleDeg = std::atan2(dir.y, dir.x) * 180.0f / b2_pi;
+
+        // Aplica la misma rotación a ambos (colisión + sprite).
         bocaCanon.setRotation(angleDeg);
+        cannonMouthSprite.setRotation(angleDeg);
+
+        // Alinea la posición del sprite con el rectángulo de colisión.
+        cannonMouthSprite.setPosition(bocaCanon.getPosition());
     }
+
+    // --- DIBUJAR ELEMENTOS DEL CAÑÓN ---
+    sf::RectangleShape pieCanon(sf::Vector2f(8, 10));
+    pieCanon.setFillColor(sf::Color::Cyan);
+    pieCanon.setPosition(10, 85);
+
+    wnd->draw(pieCanon);
+    wnd->draw(bocaCanon);
+
+    // --- DIBUJAR OBJETOS DEL NIVEL ---
+    for (auto& s : plataformasSprites)
+        wnd->draw(s);
+
+    for (auto& box : boxes)
+        box->Draw();
 
     for (auto& pend : pendulums)
         pend->Draw();
 
-    sf::RectangleShape pieCanon(sf::Vector2f(8, 10));
-    pieCanon.setFillColor(sf::Color::Cyan);
-    pieCanon.setPosition(10, 85);
-    wnd->draw(pieCanon);
-    wnd->draw(bocaCanon);
-
+    // --- DIBUJAR SPRITES DEL CAÑÓN ---
+    wnd->draw(cannonBaseSprite);
+    wnd->draw(cannonMouthSprite);
 
     // --- UI ---
     wnd->draw(contadorTexto);
 
-    // Meta
+    // --- META ---
     if (meta && !gameCompleted)
         meta->Draw();
 
-    // --- GAME OVER ---
+    // --- GAME OVER Y VICTORIA ---
     if (gameOver) {
         sf::View oldView = wnd->getView();
         wnd->setView(wnd->getDefaultView());
@@ -425,7 +463,6 @@ void Game::DrawGame()
         wnd->setView(oldView);
     }
 
-    // --- VICTORIA ---
     if (gameCompleted) {
         sf::View oldView = wnd->getView();
         wnd->setView(wnd->getDefaultView());
@@ -438,8 +475,8 @@ void Game::DrawGame()
     sf::Vector2f mouseWorld = wnd->mapPixelToCoords(mousePixel);
     crosshair->Posicionar(mouseWorld.x, mouseWorld.y);
     crosshair->Dibujar(wnd);
-
 }
+
 
 
 // =======================================================
@@ -486,7 +523,6 @@ void Game::CreateRagdollFromCannon()
 // NIVELES
 // =======================================================
 
-
 void Game::CreateLevel1()
 {
     std::cout << "Cargando Nivel 1...\n";
@@ -507,13 +543,41 @@ void Game::CreateLevel1()
     boxes.push_back(new BoxObstacle(phyWorld, wnd, 58.0f, 45.0f, 12.0f, 12.0f, true));
     boxes.push_back(new BoxObstacle(phyWorld, wnd, 62.0f, 45.0f, 12.0f, 12.0f, true));
 
+    boxes.push_back(new BoxObstacle(phyWorld, wnd, 58.0f, 35.0f, 12.0f, 12.0f, true));
+    boxes.push_back(new BoxObstacle(phyWorld, wnd, 62.0f, 35.0f, 12.0f, 12.0f, true));
+
+    // --- DISTANCE JOINTS ENTRE LAS CAJAS ---
+    for (size_t i = 0; i < boxes.size(); i += 2)
+    {
+        b2Body* bodyA = boxes[i]->GetBody();
+        b2Body* bodyB = boxes[i + 1]->GetBody();
+
+        b2Vec2 anchorA = bodyA->GetWorldCenter();
+        b2Vec2 anchorB = bodyB->GetWorldCenter();
+
+        b2DistanceJointDef jointDef;
+        jointDef.Initialize(bodyA, bodyB, anchorA, anchorB);
+        jointDef.collideConnected = false;
+
+        float distancia = (anchorB - anchorA).Length();
+        jointDef.length = distancia + 5.0f;
+
+        phyWorld->CreateJoint(&jointDef);
+    }
+
     // --- PLATAFORMA ---
-    b2Body* obstacle = Box2DHelper::CreateRectangularStaticBody(phyWorld, 25, 10);
-    obstacle->SetTransform(b2Vec2(60.0f, 70.0f), 0.0f);
+    b2Body* plataforma = Box2DHelper::CreateRectangularStaticBody(phyWorld, 25, 10);
+    plataforma->SetTransform(b2Vec2(60, 70), 0.0f);
+
+    sf::Sprite sprite(platformTexture);
+    sprite.setOrigin(platformTexture.getSize().x / 2.f, platformTexture.getSize().y / 2.f);
+    sprite.setPosition(60, 70);
+    sprite.setScale(25.f / platformTexture.getSize().x, 10.f / platformTexture.getSize().y);
+
+    plataformasSprites.push_back(sprite);
 
     // --- META ---
-    meta->GetBody()->SetTransform(b2Vec2(80.0f, 48.0f), 0.0f);
-
+    meta->GetBody()->SetTransform(b2Vec2(80.0f, 60.0f), 0.0f);
 }
 
 
@@ -524,11 +588,34 @@ void Game::CreateLevel2()
     InitBaseWorld();
     InitLevelBase();
 
-    // --- PÉNUDLO ---
-    pendulums.push_back(new Pendulum(phyWorld, wnd, 75.0f, 10.0f, 75.0f, 60.0f, 10.0f));
+    // -- CAJAS ---
+    boxes.push_back(new BoxObstacle(phyWorld, wnd, 70.0f, 30.0f, 16.0f, 16.0f, true));
+    boxes.push_back(new BoxObstacle(phyWorld, wnd, 55.0f, 60.0f, 10.0f, 10.0f, true));
+
+    // --- PLATAFORMAS INCLINADA ---
+    b2Body* obstacle = Box2DHelper::CreateRectangularStaticBody(phyWorld, 40, 10);
+    obstacle->SetTransform(b2Vec2(57.0f, 70.0f), 10.0f);
+
+    sf::Sprite sprite1(platformTexture);
+    sprite1.setOrigin(platformTexture.getSize().x / 2.f, platformTexture.getSize().y / 2.f);
+    sprite1.setPosition(57, 70);
+    sprite1.setRotation(10.0f * 180.f / b2_pi);
+    sprite1.setScale(40.f / platformTexture.getSize().x, 10.f / platformTexture.getSize().y);
+    plataformasSprites.push_back(sprite1);
+
+    // --- PLATAFORMAS HORIZONTAL ---
+    b2Body* obstacle2 = Box2DHelper::CreateRectangularStaticBody(phyWorld, 10, 10);
+    obstacle2->SetTransform(b2Vec2(68.0f, 45.0f), 0.0f);
+
+    sf::Sprite sprite2(platformTexture);
+    sprite2.setOrigin(platformTexture.getSize().x / 2.f, platformTexture.getSize().y / 2.f);
+    sprite2.setPosition(68, 45);
+    sprite2.setRotation(0.f);
+    sprite2.setScale(10.f / platformTexture.getSize().x, 10.f / platformTexture.getSize().y);
+    plataformasSprites.push_back(sprite2);
 
     // --- META ---
-    meta->GetBody()->SetTransform(b2Vec2(90.0f, 10.0f), 0.0f);
+    meta->GetBody()->SetTransform(b2Vec2(90.0f, 90.0f), 0.0f);
 }
 
 
@@ -539,23 +626,12 @@ void Game::CreateLevel3()
     InitBaseWorld();
     InitLevelBase();
 
-    // -- CAJAS ---
-    boxes.push_back(new BoxObstacle(phyWorld, wnd, 70.0f, 30.0f, 16.0f, 16.0f, true));
-    boxes.push_back(new BoxObstacle(phyWorld, wnd, 55.0f, 60.0f, 10.0f, 10.0f, true));
-
-    // --- PLATAFORMA INCLINADA ---
-    b2Body* obstacle = Box2DHelper::CreateRectangularStaticBody(phyWorld, 40, 10);
-    obstacle->SetTransform(b2Vec2(57.0f, 70.0f), 10.0f);
-
-    // --- PLATAFORMA HORIZONTAL ---
-    b2Body* obstacle2 = Box2DHelper::CreateRectangularStaticBody(phyWorld, 10, 10);
-    obstacle2->SetTransform(b2Vec2(68.0f, 45.0f), 0.0f);
+    // --- PÉNUDLO ---
+    pendulums.push_back(new Pendulum(phyWorld, wnd, 75.0f, 10.0f, 75.0f, 60.0f, 10.0f));
 
     // --- META ---
-    meta->GetBody()->SetTransform(b2Vec2(90.0f, 90.0f), 0.0f);
-
+    meta->GetBody()->SetTransform(b2Vec2(90.0f, 10.0f), 0.0f);
 }
-
 
 
 // =======================================================
@@ -654,6 +730,7 @@ void Game::ClearWorld()
         delete pend;
     pendulums.clear();
 
+    plataformasSprites.clear();
 
     if (meta) {
         delete meta;
@@ -686,6 +763,7 @@ void Game::RestartGame()
     gameOver = false;
     esperandoFin = false;
     if (meta) meta->Reset();
+    plataformasSprites.clear();
 
     ragdollsRestantes = 3;
     contadorTexto.setString("Ragdolls: " + std::to_string(ragdollsRestantes));
