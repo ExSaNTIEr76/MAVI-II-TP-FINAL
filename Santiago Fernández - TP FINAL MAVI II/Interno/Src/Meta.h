@@ -25,6 +25,8 @@ public:
 
     b2Body* GetBody() { return body; }
 
+    sf::Sprite& GetWinSprite() { return winSprite; }
+
 private:
 
     sf::RenderWindow* wnd;

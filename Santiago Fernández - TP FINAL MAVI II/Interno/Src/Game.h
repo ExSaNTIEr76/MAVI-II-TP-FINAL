@@ -10,6 +10,7 @@
 #include "Background.h"
 #include "BoxObstacle.h"
 #include "Pendulum.h"
+#include "Pulley.h"
 #include "Meta.h"
 
 using namespace sf;
@@ -23,10 +24,13 @@ private:
     int ancho;
     sf::RenderWindow* wnd;
     Color clearColor;
+    sf::View worldView; // vista del mundo físico (persistente)
+
 
     // Objetos de box2d
     b2Body* controlBody;
     b2Body* draggedBody;
+    std::vector<Ragdoll*> ragdolls;
     Background* background;
     Meta* meta;
     Crosshair* crosshair;
@@ -36,6 +40,7 @@ private:
     sf::RectangleShape bocaCanon;
     std::vector<BoxObstacle*> boxes;
     std::vector<Pendulum*> pendulums;
+    std::vector<Pulley*> pulleys;
 
 
     // Estados del juego
@@ -96,6 +101,7 @@ public:
     void UpdatePhysics();
     void DoEvents();
     void SetZoom();
+    void OnWindowResized(unsigned int width, unsigned int height);
     void RestartGame();
     void CreateRagdollFromCannon();
 
@@ -103,5 +109,6 @@ public:
     void CreateLevel1();
     void CreateLevel2();
     void CreateLevel3();
+    void CreateLevel4();
 };
 

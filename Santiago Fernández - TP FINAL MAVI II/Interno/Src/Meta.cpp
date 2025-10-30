@@ -39,10 +39,9 @@ Meta::Meta(b2World* world, sf::RenderWindow* window, float x, float y, float rad
         // La centra en la pantalla.
         sf::Vector2u winSize = wnd->getSize();
         sf::Vector2u texSize = winTexture.getSize();
-        winSprite.setPosition(
-            (winSize.x - texSize.x) / 2.0f,
-            (winSize.y - texSize.y) / 2.0f
-        );
+        winSprite.setOrigin(texSize.x / 2.f, texSize.y / 2.f);
+        winSprite.setPosition(winSize.x / 2.f, winSize.y / 2.f);
+
     }
 
     // Categoriza sus colisiones con el mundo y los objetos.

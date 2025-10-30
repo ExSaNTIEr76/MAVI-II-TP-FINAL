@@ -17,7 +17,6 @@ public:
     ~Ragdoll() = default;
 
     // Dibujo / actualización
-    void ActualizarPosiciones();
     void Dibujar();
 
     // Fuerzas / impulsos
@@ -30,16 +29,23 @@ public:
 
 private:
 
-    // crea una parte y la guarda en partes
-    b2Body* CreateBodyPart(b2World* world, float x, float y, float width, float height);
-
-    // junta revolute/simple
+    // Junta revolute/simple
     void CreateSpringJoint(b2World* world, b2Body* bodyA, b2Body* bodyB, b2Vec2 localAnchorA, b2Vec2 localAnchorB, float lowerAngle, float upperAngle);
 
     sf::RenderWindow* wnd;
     sf::Texture texture;
     sf::Sprite sprite;
 
-    std::vector<b2Body*> partes; // todas las partes que forman el ragdoll
-    b2Body* _body; // referencia al último cuerpo creado (compatibilidad)
+    struct ParteVisual {
+        b2Body* body;
+        sf::Color color;
+        float width;
+        float height;
+    };
+
+    // Todas las partes que forman el ragdoll
+    std::vector<ParteVisual> partes;
+
+    // Referencia al último cuerpo creado (compatibilidad)
+    b2Body* _body;
 };

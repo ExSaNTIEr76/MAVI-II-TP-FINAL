@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Src\Background.h" />
+    <ClInclude Include="..\Src\Pulley.h" />
     <ClInclude Include="..\Src\Ragdoll.h" />
     <ClInclude Include="..\Src\Box2DHelper.h" />
     <ClInclude Include="..\Src\BoxObstacle.h" />
@@ -32,6 +33,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Src\Background.cpp" />
+    <ClCompile Include="..\Src\Pulley.cpp" />
     <ClCompile Include="..\Src\Ragdoll.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
@@ -51,7 +53,10 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\Resources\crosshair.png" />
-    <Image Include="background.png" />
+    <Image Include="background_1.png" />
+    <Image Include="background_2.png" />
+    <Image Include="background_3.png" />
+    <Image Include="background_4.png" />
     <Image Include="cannonBase.png" />
     <Image Include="cannonMouth.png" />
     <Image Include="gameOver.png" />

@@ -105,7 +105,7 @@ Game::Game(int ancho, int alto, std::string titulo)
 
     // Restaura la vista con zoom después del menú.
     SetZoom();
-    sf::View worldView = wnd->getView();
+    worldView = wnd->getView();
 
     // Prepara el crosshair.
     wnd->setMouseCursorVisible(false);
@@ -121,7 +121,7 @@ Game::Game(int ancho, int alto, std::string titulo)
 
     // --- BOCA DEL CAÑÓN ---
     bocaCanon.setSize(sf::Vector2f(15.0f, 10.0f));
-    bocaCanon.setFillColor(sf::Color::Magenta);
+    bocaCanon.setFillColor(sf::Color::Black);
     bocaCanon.setPosition(10.0f, 80.0f);
     bocaCanon.setOrigin(0.0f, bocaCanon.getSize().y / 2.0f);
 
@@ -131,9 +131,9 @@ Game::Game(int ancho, int alto, std::string titulo)
         std::cout << "No se pudo cargar PIXELADE.woff\n";
 
     contadorTexto.setFont(fuente);
-    contadorTexto.setCharacterSize(12);
+    contadorTexto.setCharacterSize(64);
     contadorTexto.setFillColor(sf::Color::White);
-    contadorTexto.setPosition(6, 2);
+    contadorTexto.setPosition(45, 15);
     contadorTexto.setString("Ragdolls: " + std::to_string(ragdollsRestantes));
 
     // --- GAME OVER ---
@@ -143,10 +143,8 @@ Game::Game(int ancho, int alto, std::string titulo)
         gameOverSprite.setTexture(gameOverTexture);
         sf::Vector2u winSize = wnd->getSize();
         sf::Vector2u texSize = gameOverTexture.getSize();
-        gameOverSprite.setPosition(
-            (winSize.x - texSize.x) / 2.0f,
-            (winSize.y - texSize.y) / 2.0f
-        );
+        gameOverSprite.setOrigin(texSize.x / 2.f, texSize.y / 2.f);
+        gameOverSprite.setPosition(winSize.x / 2.f, winSize.y / 2.f);
     }
 
     // --- VICTORIA ---
@@ -156,13 +154,10 @@ Game::Game(int ancho, int alto, std::string titulo)
         victoriaSprite.setTexture(victoriaTexture);
         sf::Vector2u winSize = wnd->getSize();
         sf::Vector2u texSize = victoriaTexture.getSize();
-        victoriaSprite.setPosition(
-            (winSize.x - texSize.x) / 2.0f,
-            (winSize.y - texSize.y) / 2.0f
-        );
+        victoriaSprite.setOrigin(texSize.x / 2.f, texSize.y / 2.f);
+        victoriaSprite.setPosition(winSize.x / 2.f, winSize.y / 2.f);
     }
 }
-
 
 
 
@@ -172,8 +167,6 @@ Game::Game(int ancho, int alto, std::string titulo)
 
 void Game::Loop()
 {
-    // Guarda la vista del mundo con zoom.
-    sf::View worldView = wnd->getView();
 
     while (wnd->isOpen())
     {
@@ -222,11 +215,6 @@ void Game::Loop()
         if (gameCompleted)
             wnd->draw(victoriaSprite);
 
-        // --- CROSSHAIR ---
-        sf::Vector2i mousePixel = sf::Mouse::getPosition(*wnd);
-        crosshair->Posicionar(static_cast<float>(mousePixel.x), static_cast<float>(mousePixel.y));
-        crosshair->Dibujar(wnd);
-
         wnd->setView(oldView);
         wnd->display();
     }
@@ -274,11 +262,18 @@ void Game::UpdatePhysics()
             CreateLevel3();
             background->SetLevel(3);
         }
-        else if (currentLevel == 3 && !gameCompleted) {
+        else if (currentLevel == 3) {
+            currentLevel = 4;
+            RestartGame();
+            CreateLevel4();
+            background->SetLevel(4);
+        }
+        else if (currentLevel == 4 && !gameCompleted) {
             std::cout << "GANASTE TODOS LOS NIVELES!" << std::endl;
             gameCompleted = true;
             levelTransition = false;
         }
+
     }
 
     // Game Over tras quedarse sin ragdolls:
@@ -295,6 +290,7 @@ void Game::UpdatePhysics()
 }
 
 
+
 // =======================================================
 // EVENTOS
 // =======================================================
@@ -305,6 +301,7 @@ void Game::DoEvents()
     {
         switch (evt.type)
         {
+
         case Event::Closed:
             wnd->close();
             break;
@@ -353,6 +350,7 @@ void Game::DoEvents()
                 if (currentLevel == 1) CreateLevel1();
                 else if (currentLevel == 2) CreateLevel2();
                 else if (currentLevel == 3) CreateLevel3();
+                else if (currentLevel == 4) CreateLevel4();
             }
             break;
 
@@ -366,10 +364,15 @@ void Game::DoEvents()
             if (evt.mouseButton.button == Mouse::Left)
                 CreateRagdollFromCannon();
             break;
+
+        case Event::Resized:
+            OnWindowResized(evt.size.width, evt.size.height);
+            break;
+
         }
+
     }
 }
-
 
 
 
@@ -379,11 +382,62 @@ void Game::DoEvents()
 
 void Game::SetZoom()
 {
-    View camara;
-    camara.setSize(100.0f, 100.0f);
+    sf::Vector2u winSize = wnd->getSize();
+
+    // Relación de aspecto (ancho/alto).
+    float aspectRatio = static_cast<float>(winSize.x) / static_cast<float>(winSize.y);
+
+    // Mantiene 100 unidades de altura visibles.
+    // También ajusta el ancho según la ventana para que ahora se vea más grande.
+    float viewHeight = 100.0f;
+    float viewWidth = viewHeight * aspectRatio;
+
+    sf::View camara;
     camara.setCenter(50.0f, 50.0f);
+    camara.setSize(viewWidth, viewHeight);
+
     wnd->setView(camara);
 }
+
+
+void Game::OnWindowResized(unsigned int width, unsigned int height)
+{
+    // Actualiza la vista del mundo (mantiene escala y centro).
+    float aspectRatio = static_cast<float>(width) / static_cast<float>(height);
+    worldView.setSize(100.0f * aspectRatio, 100.0f);
+    worldView.setCenter(50.f, 50.f);
+
+    wnd->setView(worldView);
+
+    // Ajustar fondo.
+    if (background)
+    {
+        sf::Vector2u texSize = background->GetTexture().getSize();
+        background->GetSprite().setScale(
+            static_cast<float>(width) / texSize.x,
+            static_cast<float>(height) / texSize.y
+        );
+    }
+
+    // Centra las pantallas de Game Over, You Win y Victoria.
+    sf::Vector2u winSize(width, height);
+
+    auto centerSprite = [&](sf::Sprite& spr)
+        {
+            if (!spr.getTexture()) return;
+            sf::Vector2u texSize = spr.getTexture()->getSize();
+            spr.setOrigin(texSize.x / 2.f, texSize.y / 2.f);
+            spr.setPosition(winSize.x / 2.f, winSize.y / 2.f);
+        };
+
+    centerSprite(gameOverSprite);
+    centerSprite(victoriaSprite);
+    if (meta) centerSprite(meta->GetWinSprite());
+
+    // Recoloca el contador de ragdolls.
+    contadorTexto.setPosition(6, 2);
+}
+
 
 
 // =======================================================
@@ -395,7 +449,7 @@ void Game::DrawGame()
     // --- CONTROL BODY ---
     if (controlBody) {
         sf::CircleShape controlShape(5);
-        controlShape.setFillColor(sf::Color::Magenta);
+        controlShape.setFillColor(sf::Color::Black);
         controlShape.setPosition(controlBody->GetPosition().x - 5, controlBody->GetPosition().y - 5);
         wnd->draw(controlShape);
     }
@@ -427,9 +481,9 @@ void Game::DrawGame()
     }
 
     // --- DIBUJAR ELEMENTOS DEL CAÑÓN ---
-    sf::RectangleShape pieCanon(sf::Vector2f(8, 10));
-    pieCanon.setFillColor(sf::Color::Cyan);
-    pieCanon.setPosition(10, 85);
+    sf::RectangleShape pieCanon(sf::Vector2f(10, 10));
+    pieCanon.setFillColor(sf::Color::Black);
+    pieCanon.setPosition(8, 85);
 
     wnd->draw(pieCanon);
     wnd->draw(bocaCanon);
@@ -444,12 +498,16 @@ void Game::DrawGame()
     for (auto& pend : pendulums)
         pend->Draw();
 
+    for (auto& pulley : pulleys)
+        pulley->Draw();
+
     // --- DIBUJAR SPRITES DEL CAÑÓN ---
     wnd->draw(cannonBaseSprite);
     wnd->draw(cannonMouthSprite);
 
-    // --- UI ---
-    wnd->draw(contadorTexto);
+    // --- DIBUJAR RAGDOLLS ---
+    for (auto& r : ragdolls)
+        r->Dibujar();
 
     // --- META ---
     if (meta && !gameCompleted)
@@ -506,6 +564,7 @@ void Game::CreateRagdollFromCannon()
     float desiredSpeed = 200.0f;
 
     Ragdoll* ragdoll = new Ragdoll(phyWorld, wnd, spawnX, spawnY);
+    ragdolls.push_back(ragdoll);
     ragdoll->AplicarImpulsoATodo(direction, desiredSpeed);
     ragdoll->Despertar();
 
@@ -519,13 +578,59 @@ void Game::CreateRagdollFromCannon()
 }
 
 
+
 // =======================================================
 // NIVELES
 // =======================================================
 
+
 void Game::CreateLevel1()
 {
     std::cout << "Cargando Nivel 1...\n";
+    ClearWorld();
+    InitBaseWorld();
+    InitLevelBase();
+
+    // --- CAJA ---
+    boxes.push_back(new BoxObstacle(phyWorld, wnd, 95.0f, 30.0f, 12.0f, 12.0f, true));
+    boxes.push_back(new BoxObstacle(phyWorld, wnd, 95.0f, 25.0f, 9.0f, 9.0f, true));
+
+    // --- POELEA ---
+    Pulley* pulley = new Pulley(phyWorld, wnd, platformTexture,
+        b2Vec2(95.f, 40.f), b2Vec2(55.f, 65.f),
+        25.f, 5.f);
+    pulleys.push_back(pulley);
+
+    // --- PLATAFORMAS VERTICAL 1 ---
+    b2Body* platform1 = Box2DHelper::CreateRectangularStaticBody(phyWorld, 60, 5);
+    platform1->SetTransform(b2Vec2(40.0f, 65.0f), b2_pi / 2);
+
+    sf::Sprite sprite1(platformTexture);
+    sprite1.setOrigin(platformTexture.getSize().x / 2.f, platformTexture.getSize().y / 2.f);
+    sprite1.setPosition(40, 65);
+    sprite1.setRotation(90.0f);
+    sprite1.setScale(60.f / platformTexture.getSize().x, 5.f / platformTexture.getSize().y);
+    plataformasSprites.push_back(sprite1);
+
+    // --- PLATAFORMAS VERTICAL 2 ---
+    b2Body* platform2 = Box2DHelper::CreateRectangularStaticBody(phyWorld, 20, 5);
+    platform2->SetTransform(b2Vec2(65.0f, 14.0f), b2_pi / 2);
+
+    sf::Sprite sprite2(platformTexture);
+    sprite2.setOrigin(platformTexture.getSize().x / 2.f, platformTexture.getSize().y / 2.f);
+    sprite2.setPosition(65, 14);
+    sprite2.setRotation(90.0f);
+    sprite2.setScale(20.f / platformTexture.getSize().x, 5.f / platformTexture.getSize().y);
+    plataformasSprites.push_back(sprite2);
+
+    // --- META ---
+    meta->GetBody()->SetTransform(b2Vec2(95.0f, 90.0f), 0.0f);
+}
+
+
+void Game::CreateLevel2()
+{
+    std::cout << "Cargando Nivel 2...\n";
     ClearWorld();
     InitBaseWorld();
     InitLevelBase();
@@ -566,8 +671,8 @@ void Game::CreateLevel1()
     }
 
     // --- PLATAFORMA ---
-    b2Body* plataforma = Box2DHelper::CreateRectangularStaticBody(phyWorld, 25, 10);
-    plataforma->SetTransform(b2Vec2(60, 70), 0.0f);
+    b2Body* plataform = Box2DHelper::CreateRectangularStaticBody(phyWorld, 25, 10);
+    plataform->SetTransform(b2Vec2(60, 70), 0.0f);
 
     sf::Sprite sprite(platformTexture);
     sprite.setOrigin(platformTexture.getSize().x / 2.f, platformTexture.getSize().y / 2.f);
@@ -577,45 +682,7 @@ void Game::CreateLevel1()
     plataformasSprites.push_back(sprite);
 
     // --- META ---
-    meta->GetBody()->SetTransform(b2Vec2(80.0f, 60.0f), 0.0f);
-}
-
-
-void Game::CreateLevel2()
-{
-    std::cout << "Cargando Nivel 2...\n";
-    ClearWorld();
-    InitBaseWorld();
-    InitLevelBase();
-
-    // -- CAJAS ---
-    boxes.push_back(new BoxObstacle(phyWorld, wnd, 70.0f, 30.0f, 16.0f, 16.0f, true));
-    boxes.push_back(new BoxObstacle(phyWorld, wnd, 55.0f, 60.0f, 10.0f, 10.0f, true));
-
-    // --- PLATAFORMAS INCLINADA ---
-    b2Body* obstacle = Box2DHelper::CreateRectangularStaticBody(phyWorld, 40, 10);
-    obstacle->SetTransform(b2Vec2(57.0f, 70.0f), 10.0f);
-
-    sf::Sprite sprite1(platformTexture);
-    sprite1.setOrigin(platformTexture.getSize().x / 2.f, platformTexture.getSize().y / 2.f);
-    sprite1.setPosition(57, 70);
-    sprite1.setRotation(10.0f * 180.f / b2_pi);
-    sprite1.setScale(40.f / platformTexture.getSize().x, 10.f / platformTexture.getSize().y);
-    plataformasSprites.push_back(sprite1);
-
-    // --- PLATAFORMAS HORIZONTAL ---
-    b2Body* obstacle2 = Box2DHelper::CreateRectangularStaticBody(phyWorld, 10, 10);
-    obstacle2->SetTransform(b2Vec2(68.0f, 45.0f), 0.0f);
-
-    sf::Sprite sprite2(platformTexture);
-    sprite2.setOrigin(platformTexture.getSize().x / 2.f, platformTexture.getSize().y / 2.f);
-    sprite2.setPosition(68, 45);
-    sprite2.setRotation(0.f);
-    sprite2.setScale(10.f / platformTexture.getSize().x, 10.f / platformTexture.getSize().y);
-    plataformasSprites.push_back(sprite2);
-
-    // --- META ---
-    meta->GetBody()->SetTransform(b2Vec2(90.0f, 90.0f), 0.0f);
+    meta->GetBody()->SetTransform(b2Vec2(80.0f, 70.0f), 0.0f);
 }
 
 
@@ -626,11 +693,52 @@ void Game::CreateLevel3()
     InitBaseWorld();
     InitLevelBase();
 
-    // --- PÉNUDLO ---
-    pendulums.push_back(new Pendulum(phyWorld, wnd, 75.0f, 10.0f, 75.0f, 60.0f, 10.0f));
+    // -- CAJAS ---
+    boxes.push_back(new BoxObstacle(phyWorld, wnd, 75.0f, 30.0f, 16.0f, 16.0f, true));
+    boxes.push_back(new BoxObstacle(phyWorld, wnd, 75.0f, 20.0f, 12.0f, 12.0f, true));
+
+    boxes.push_back(new BoxObstacle(phyWorld, wnd, 66.0f, 60.0f, 10.0f, 10.0f, true));
+    boxes.push_back(new BoxObstacle(phyWorld, wnd, 54.0f, 52.0f, 10.0f, 10.0f, true));
+
+    // --- PLATAFORMAS INCLINADA ---
+    b2Body* plataform1 = Box2DHelper::CreateRectangularStaticBody(phyWorld, 40, 10);
+    plataform1->SetTransform(b2Vec2(62.0f, 75.0f), 10.0f);
+
+    sf::Sprite sprite1(platformTexture);
+    sprite1.setOrigin(platformTexture.getSize().x / 2.f, platformTexture.getSize().y / 2.f);
+    sprite1.setPosition(62, 75);
+    sprite1.setRotation(10.0f * 180.f / b2_pi);
+    sprite1.setScale(40.f / platformTexture.getSize().x, 10.f / platformTexture.getSize().y);
+    plataformasSprites.push_back(sprite1);
+
+    // --- PLATAFORMAS HORIZONTAL ---
+    b2Body* plataform2 = Box2DHelper::CreateRectangularStaticBody(phyWorld, 10, 10);
+    plataform2->SetTransform(b2Vec2(74.0f, 45.0f), 0.0f);
+
+    sf::Sprite sprite2(platformTexture);
+    sprite2.setOrigin(platformTexture.getSize().x / 2.f, platformTexture.getSize().y / 2.f);
+    sprite2.setPosition(74, 45);
+    sprite2.setRotation(0.f);
+    sprite2.setScale(10.f / platformTexture.getSize().x, 10.f / platformTexture.getSize().y);
+    plataformasSprites.push_back(sprite2);
 
     // --- META ---
-    meta->GetBody()->SetTransform(b2Vec2(90.0f, 10.0f), 0.0f);
+    meta->GetBody()->SetTransform(b2Vec2(95.0f, 90.0f), 0.0f);
+}
+
+
+void Game::CreateLevel4()
+{
+    std::cout << "Cargando Nivel 4...\n";
+    ClearWorld();
+    InitBaseWorld();
+    InitLevelBase();
+
+    // --- PÉNUDLO ---
+    pendulums.push_back(new Pendulum(phyWorld, wnd, 80.0f, 10.0f, 75.0f, 60.0f, 10.0f));
+
+    // --- META ---
+    meta->GetBody()->SetTransform(b2Vec2(100.0f, 10.0f), 0.0f);
 }
 
 
@@ -662,19 +770,19 @@ void Game::InitBaseWorld()
         };
 
     // --- SUELO Y PAREDES ---
-    b2Body* groundBody = Box2DHelper::CreateRectangularStaticBody(phyWorld, 100, 10);
+    b2Body* groundBody = Box2DHelper::CreateRectangularStaticBody(phyWorld, 150, 10);
     groundBody->SetTransform(b2Vec2(50.0f, 100.0f), 0.0f);
     SetCategory(groundBody, CATEGORY_WALL, 0xFFFF);
 
     b2Body* leftWallBody = Box2DHelper::CreateRectangularStaticBody(phyWorld, 10, 100);
-    leftWallBody->SetTransform(b2Vec2(0.0f, 50.0f), 0.0f);
+    leftWallBody->SetTransform(b2Vec2(-15.0f, 50.0f), 0.0f);
     SetCategory(leftWallBody, CATEGORY_WALL, 0xFFFF);
 
     b2Body* rightWallBody = Box2DHelper::CreateRectangularStaticBody(phyWorld, 10, 100);
-    rightWallBody->SetTransform(b2Vec2(100.0f, 50.0f), 0.0f);
+    rightWallBody->SetTransform(b2Vec2(115.0f, 50.0f), 0.0f);
     SetCategory(rightWallBody, CATEGORY_WALL, 0xFFFF);
 
-    b2Body* topWallBody = Box2DHelper::CreateRectangularStaticBody(phyWorld, 100, 10);
+    b2Body* topWallBody = Box2DHelper::CreateRectangularStaticBody(phyWorld, 150, 10);
     topWallBody->SetTransform(b2Vec2(50.0f, 0.0f), 0.0f);
     SetCategory(topWallBody, CATEGORY_WALL, 0xFFFF);
 
@@ -722,6 +830,10 @@ void Game::InitLevelBase()
 
 void Game::ClearWorld()
 {
+    for (auto r : ragdolls)
+        delete r;
+    ragdolls.clear();
+
     for (auto box : boxes)
         delete box;
     boxes.clear();
@@ -729,6 +841,10 @@ void Game::ClearWorld()
     for (auto pend : pendulums)
         delete pend;
     pendulums.clear();
+
+    for (auto pulley : pulleys)
+        delete pulley;
+    pulleys.clear();
 
     plataformasSprites.clear();
 

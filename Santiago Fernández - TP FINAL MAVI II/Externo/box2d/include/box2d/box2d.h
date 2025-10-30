@@ -62,6 +62,7 @@ enum CollisionCategory {
 	CATEGORY_META = 0x0004,
 	CATEGORY_CANON = 0x0008,
 	CATEGORY_WALL = 0x0010,
+	CATEGORY_PULLEY = 0x0020,
 };
 
 #endif

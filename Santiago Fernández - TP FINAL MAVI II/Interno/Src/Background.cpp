@@ -32,18 +32,23 @@ void Background::LoadTextureForLevel(int level)
         texture.loadFromFile("background_1.png");
     }
 
-    sprite.setTexture(texture);
-    sprite.setPosition(0, 0);
-
+    sf::Vector2u winSize = wnd->getSize();
     sf::Vector2u texSize = texture.getSize();
+
+    sprite.setTexture(texture);
+    sprite.setPosition(0.f, 0.f);
     sprite.setScale(
-        100.0f / texSize.x,
-        100.0f / texSize.y
+        static_cast<float>(winSize.x) / texSize.x,
+        static_cast<float>(winSize.y) / texSize.y
     );
 }
 
 
 void Background::Draw()
 {
+    sf::View oldView = wnd->getView();
+    wnd->setView(wnd->getDefaultView());
     wnd->draw(sprite);
+    wnd->setView(oldView);
 }
+

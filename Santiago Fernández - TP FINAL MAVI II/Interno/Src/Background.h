@@ -16,6 +16,9 @@ public:
     void SetLevel(int level);
     void Draw();
 
+    const sf::Texture& GetTexture() const { return texture; }
+    sf::Sprite& GetSprite() { return sprite; }
+
 private:
 
     void LoadTextureForLevel(int level);
