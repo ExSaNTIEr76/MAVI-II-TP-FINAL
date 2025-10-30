@@ -12,7 +12,7 @@
 
 Game::Game(int ancho, int alto, std::string titulo)
 {
-    wnd = new RenderWindow(VideoMode(ancho, alto), titulo);
+    wnd = new RenderWindow(VideoMode(ancho, alto), titulo, sf::Style::Titlebar | sf::Style::Close);
     wnd->setVisible(true);
     fps = 200;
     wnd->setFramerateLimit(fps);
@@ -591,50 +591,6 @@ void Game::CreateLevel1()
     InitBaseWorld();
     InitLevelBase();
 
-    // --- CAJA ---
-    boxes.push_back(new BoxObstacle(phyWorld, wnd, 95.0f, 30.0f, 12.0f, 12.0f, true));
-    boxes.push_back(new BoxObstacle(phyWorld, wnd, 95.0f, 25.0f, 9.0f, 9.0f, true));
-
-    // --- POELEA ---
-    Pulley* pulley = new Pulley(phyWorld, wnd, platformTexture,
-        b2Vec2(95.f, 40.f), b2Vec2(55.f, 65.f),
-        25.f, 5.f);
-    pulleys.push_back(pulley);
-
-    // --- PLATAFORMAS VERTICAL 1 ---
-    b2Body* platform1 = Box2DHelper::CreateRectangularStaticBody(phyWorld, 60, 5);
-    platform1->SetTransform(b2Vec2(40.0f, 65.0f), b2_pi / 2);
-
-    sf::Sprite sprite1(platformTexture);
-    sprite1.setOrigin(platformTexture.getSize().x / 2.f, platformTexture.getSize().y / 2.f);
-    sprite1.setPosition(40, 65);
-    sprite1.setRotation(90.0f);
-    sprite1.setScale(60.f / platformTexture.getSize().x, 5.f / platformTexture.getSize().y);
-    plataformasSprites.push_back(sprite1);
-
-    // --- PLATAFORMAS VERTICAL 2 ---
-    b2Body* platform2 = Box2DHelper::CreateRectangularStaticBody(phyWorld, 20, 5);
-    platform2->SetTransform(b2Vec2(65.0f, 14.0f), b2_pi / 2);
-
-    sf::Sprite sprite2(platformTexture);
-    sprite2.setOrigin(platformTexture.getSize().x / 2.f, platformTexture.getSize().y / 2.f);
-    sprite2.setPosition(65, 14);
-    sprite2.setRotation(90.0f);
-    sprite2.setScale(20.f / platformTexture.getSize().x, 5.f / platformTexture.getSize().y);
-    plataformasSprites.push_back(sprite2);
-
-    // --- META ---
-    meta->GetBody()->SetTransform(b2Vec2(95.0f, 90.0f), 0.0f);
-}
-
-
-void Game::CreateLevel2()
-{
-    std::cout << "Cargando Nivel 2...\n";
-    ClearWorld();
-    InitBaseWorld();
-    InitLevelBase();
-
     // --- CAJAS ---
     boxes.push_back(new BoxObstacle(phyWorld, wnd, 58.0f, 100.0f, 12.0f, 12.0f, true));
     boxes.push_back(new BoxObstacle(phyWorld, wnd, 62.0f, 100.0f, 12.0f, 12.0f, true));
@@ -682,20 +638,20 @@ void Game::CreateLevel2()
     plataformasSprites.push_back(sprite);
 
     // --- META ---
-    meta->GetBody()->SetTransform(b2Vec2(80.0f, 70.0f), 0.0f);
+    meta->GetBody()->SetTransform(b2Vec2(80.0f, 65.0f), 0.0f);
 }
 
 
-void Game::CreateLevel3()
+void Game::CreateLevel2()
 {
-    std::cout << "Cargando Nivel 3...\n";
+    std::cout << "Cargando Nivel 2...\n";
     ClearWorld();
     InitBaseWorld();
     InitLevelBase();
 
     // -- CAJAS ---
     boxes.push_back(new BoxObstacle(phyWorld, wnd, 75.0f, 30.0f, 16.0f, 16.0f, true));
-    boxes.push_back(new BoxObstacle(phyWorld, wnd, 75.0f, 20.0f, 12.0f, 12.0f, true));
+    boxes.push_back(new BoxObstacle(phyWorld, wnd, 75.0f, 20.0f, 14.0f, 14.0f, true));
 
     boxes.push_back(new BoxObstacle(phyWorld, wnd, 66.0f, 60.0f, 10.0f, 10.0f, true));
     boxes.push_back(new BoxObstacle(phyWorld, wnd, 54.0f, 52.0f, 10.0f, 10.0f, true));
@@ -727,6 +683,50 @@ void Game::CreateLevel3()
 }
 
 
+void Game::CreateLevel3()
+{
+    std::cout << "Cargando Nivel 3...\n";
+    ClearWorld();
+    InitBaseWorld();
+    InitLevelBase();
+
+    // --- CAJA ---
+    boxes.push_back(new BoxObstacle(phyWorld, wnd, 95.0f, 30.0f, 12.0f, 12.0f, true));
+    boxes.push_back(new BoxObstacle(phyWorld, wnd, 95.0f, 25.0f, 9.0f, 9.0f, true));
+
+    // --- POELEA ---
+    Pulley* pulley = new Pulley(phyWorld, wnd, platformTexture,
+        b2Vec2(95.f, 40.f), b2Vec2(55.f, 65.f),
+        25.f, 5.f);
+    pulleys.push_back(pulley);
+
+    // --- PLATAFORMAS VERTICAL 1 ---
+    b2Body* platform1 = Box2DHelper::CreateRectangularStaticBody(phyWorld, 60, 5);
+    platform1->SetTransform(b2Vec2(40.0f, 65.0f), b2_pi / 2);
+
+    sf::Sprite sprite1(platformTexture);
+    sprite1.setOrigin(platformTexture.getSize().x / 2.f, platformTexture.getSize().y / 2.f);
+    sprite1.setPosition(40, 65);
+    sprite1.setRotation(90.0f);
+    sprite1.setScale(60.f / platformTexture.getSize().x, 5.f / platformTexture.getSize().y);
+    plataformasSprites.push_back(sprite1);
+
+    // --- PLATAFORMAS VERTICAL 2 ---
+    b2Body* platform2 = Box2DHelper::CreateRectangularStaticBody(phyWorld, 20, 5);
+    platform2->SetTransform(b2Vec2(65.0f, 14.0f), b2_pi / 2);
+
+    sf::Sprite sprite2(platformTexture);
+    sprite2.setOrigin(platformTexture.getSize().x / 2.f, platformTexture.getSize().y / 2.f);
+    sprite2.setPosition(65, 14);
+    sprite2.setRotation(90.0f);
+    sprite2.setScale(20.f / platformTexture.getSize().x, 5.f / platformTexture.getSize().y);
+    plataformasSprites.push_back(sprite2);
+
+    // --- META ---
+    meta->GetBody()->SetTransform(b2Vec2(95.0f, 90.0f), 0.0f);
+}
+
+
 void Game::CreateLevel4()
 {
     std::cout << "Cargando Nivel 4...\n";
@@ -735,10 +735,11 @@ void Game::CreateLevel4()
     InitLevelBase();
 
     // --- PÉNUDLO ---
-    pendulums.push_back(new Pendulum(phyWorld, wnd, 80.0f, 10.0f, 75.0f, 60.0f, 10.0f));
+    pendulums.push_back(new Pendulum(phyWorld, wnd, 70.0f, 10.0f, 75.0f, 60.0f, 10.0f));
+    pendulums.push_back(new Pendulum(phyWorld, wnd, 90.0f, 10.0f, 75.0f, 60.0f, 5.0f));
 
     // --- META ---
-    meta->GetBody()->SetTransform(b2Vec2(100.0f, 10.0f), 0.0f);
+    meta->GetBody()->SetTransform(b2Vec2(85.0f, 10.0f), 0.0f);
 }
 
 
